@@ -1,0 +1,19 @@
+extend type Query {
+    customers: [Customer!]
+    customer(id: ID!): Customer
+    me: Customer
+}
+extend type Mutation {
+    signUp( fullName: String!, email: String!, password: String!): Customer!
+    signIn( email: String!, password: String!): Customer!
+    deleteUser(id: ID!): Boolean!
+}
+type Customer {
+    id: ID!
+    fullName: String!
+    email: String!
+    password: String!
+    accessToken: String
+    apiKey: String
+    role: String
+}
