@@ -37,6 +37,7 @@ app.use('/customers', routes.customer);
 app.use('/contents', routes.content);
 app.use('/collaboratives', routes.collaborative);
 app.use('/auth', routes.auth);
+app.use('/upload', routes.upload);
 // app.use('/messages', routes.message);
 
 // * Start * //

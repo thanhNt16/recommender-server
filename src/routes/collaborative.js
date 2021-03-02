@@ -9,13 +9,13 @@ router.get('/', auth, async (req, res) => {
 
 router.post('/create', auth, async (req, res) => {
   try {
-    const { userId, feedBack, implicit, itemId, content, customerId } = req.body;
+    const { userId, feedBack, explicit, itemId, content, customerId } = req.body;
     const collaborativeRecord = await req.context.models.Collaborative.create({
       itemId,
       content,
       userId,
       feedBack,
-      implicit,
+      explicit,
       customer: customerId,
     });
     await collaborativeRecord.save();
