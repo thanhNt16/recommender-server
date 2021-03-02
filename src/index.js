@@ -1,83 +1,62 @@
-import jwt from 'jsonwebtoken';
-import express from 'express';
-import {
-  ApolloServer,
-  AuthenticationError
-} from 'apollo-server-express';
-import cors from 'cors';
 import 'dotenv/config';
+import cors from 'cors';
+import bodyParser from 'body-parser'
+import express from 'express';
+
 import models, { connectDb } from './models';
-
-import { resolvers, typeDefs } from './setup/schema';
-
-const getMe = async (req) => {
-  const token = req.headers.authentication ? req.headers.authentication.split(" ")[1] : null;
-  console.log('token', token);
-
-  if (token) {
-    try {
-      return await jwt.verify(token , process.env.SECRET);
-    } catch (e) {
-      console.log("Error Your session expired. Sign in again")
-      // throw new AuthenticationError('Your session expired. Sign in again');
-      return null;
-    }
-  }
-  return null;
-}
+import routes from './routes';
 
 const app = express();
-// const PORT = process.env.PORT;
+
+// * Application-Level Middleware * //
+
+// Third-Party Middleware
+
 app.use(cors());
-const createUsersWithMessages = async () => {
-  const user1 = new models.Customer({
-    fullName: 'harry',
-    email: "test@test.com",
-    password: "123",
-    accessToken: "abc123",
-    apiKey: "123abc"
-  });
- 
-  await user1.save();
-};
+app.use(bodyParser.json({ type: 'application/*+json' }))
 
+// Built-In Middleware
 
-const server = new ApolloServer({
-  typeDefs,
-  resolvers,
-  formatError: error => 
-    // const message = error.message
-    //   .replace('SequelizeValidationError: ', '')
-    //   .replace('Validation error: ', '');
-    // return {
-    //   ...error,
-    //   message,
-    // };
-     error
-  ,
-  context: async ({ req }) => {
-    const me = await getMe(req);
-    
-    return {
-      me,
-      models,
-      secret: process.env.SECRET
-    }
-  }
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Custom Middleware
+
+app.use(async (req, res, next) => {
+  req.context = {
+    models,
+    // me: await models.User.findByLogin('rwieruch'),
+  };
+  next();
 });
 
-server.applyMiddleware({
-  app,
-  path: '/graphql'
-});
+// * Routes * //
+
+// app.use('/session', routes.session);
+app.use('/customers', routes.customer);
+app.use('/contents', routes.content);
+app.use('/collaboratives', routes.collaborative);
+app.use('/auth', routes.auth);
+// app.use('/messages', routes.message);
+
+// * Start * //
+
+const eraseDatabaseOnSync = true;
+
 connectDb().then(async () => {
-  // createUsersWithMessages()
+  if (eraseDatabaseOnSync) {
+    // await Promise.all([
+    //   models.User.deleteMany({}),
+    //   models.Message.deleteMany({}),
+    // ]);
+
+    // createUsersWithMessages();
+  }
+
   app.listen(process.env.PORT, () =>
-    console.log(`Apollo Server on http://localhost:${process.env.PORT}/graphql`),
+    console.log(`Recommender server listening on port ${process.env.PORT}!`),
   );
 });
-// app.listen({
-//   port: 8000
-// }, () => {
-//   console.log('');
-// });
+
+// * Database Seeding * //
+
