@@ -7,6 +7,22 @@ router.get('/me', auth, async(req, res) => {
     // View logged in user profile
     res.send(req.customer)
 })
+router.post('/signOut', auth, async(req, res) => {
+  // View logged in user profile
+  const incomingToken = req.header('Authorization').replace('Bearer ', '')
+  const token = req.customer.token
+  try {
+    const customer = await req.context.models.Customer.findById(req.customer._id)
+    if (incomingToken === token) {
+      req.customer = null
+      customer.token = null
+    }
+    res.status(200).send({ message: 'Sign out succesfully'})
+  } catch (error) {
+    res.status(500).send({ error: error.message })
+  }
+  
+})
 
 router.post('/signUp', async (req, res) => {
   try {

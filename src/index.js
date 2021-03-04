@@ -2,7 +2,7 @@ import 'dotenv/config';
 import cors from 'cors';
 import bodyParser from 'body-parser'
 import express from 'express';
-
+import { morganMiddleware } from './middleware'
 import models, { connectDb } from './models';
 import routes from './routes';
 
@@ -13,6 +13,7 @@ const app = express();
 // Third-Party Middleware
 
 app.use(cors());
+app.use(morganMiddleware)
 app.use(bodyParser.json({ type: 'application/*+json' }))
 
 // Built-In Middleware
