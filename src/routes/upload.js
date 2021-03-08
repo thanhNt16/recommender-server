@@ -5,6 +5,7 @@ const router = Router();
 import multer from 'multer';
 import fs from 'fs';
 import { parse } from '@fast-csv/parse';
+import { listener } from '../services/rabbitService'
 
 // SET STORAGE
 var storage = multer.diskStorage({
@@ -52,7 +53,9 @@ router.post('/content', auth, upload.single('content'), (req, res, next) => {
         }).then((data) => console.log(`Inserted ${data}`));
       }
     })
-    .on('end', (rowCount) => console.log(`Parsed ${rowCount} rows`));
+    .on('end', (rowCount) => {
+      listener.emit("sendMessage", "Start training")
+    });
   res.send(file);
 });
 router.post(

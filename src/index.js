@@ -5,6 +5,7 @@ import express from 'express';
 import { morganMiddleware } from './middleware'
 import models, { connectDb } from './models';
 import routes from './routes';
+import { connectRabbit } from './services/rabbitService'
 
 const app = express();
 
@@ -54,6 +55,7 @@ connectDb().then(async () => {
 
     // createUsersWithMessages();
   }
+  connectRabbit()
 
   app.listen(process.env.PORT, () =>
     console.log(`Recommender server listening on port ${process.env.PORT}!`),
