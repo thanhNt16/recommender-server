@@ -12,10 +12,10 @@ function connectRabbit() {
       if (error1) {
         throw error1;
       }
-      var queue = 'hello';
+      var queue = 'job_queue';
 
       channel.assertQueue(queue, {
-        durable: false,
+        durable: true,
       });
       listener.on('sendMessage', (msg) => {
         channel.sendToQueue(queue, Buffer.from(msg));
