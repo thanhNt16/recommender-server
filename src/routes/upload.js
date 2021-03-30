@@ -50,38 +50,47 @@ router.post(
       .on('end', async (rowCount) => {
         console.log('Read file complete', rowCount);
         const insertData = dataFromFile.map(async (row) => {
-          const content = await Content.findOne({
-            itemId: row.itemId,
-            content: row.content,
-            customer: row.customer,
-          });
-          if (content) {
-            console.log('Content already existed. Skip');
-            return;
-          } else {
-            const result = await Content.create({
+          try {
+            const content = await Content.findOne({
               itemId: row.itemId,
               content: row.content,
               customer: row.customer,
             });
-            return result;
+            if (content) {
+              console.log('Content already existed. Skip');
+              return;
+            } else {
+              const result = await Content.create({
+                itemId: row.itemId,
+                content: row.content,
+                customer: row.customer,
+              });
+              return result;
+            }
+          } catch (error) {
+            res.status(400).json({
+              message:
+                'Invalid upload file format. Please check the instruction again',
+            });
           }
         });
         await PromiseBar.all(insertData, { label: 'Minify' })
           .then(() =>
-            listener.emit('sendMessage', JSON.stringify({
-              user_id: customer._id,
-              command: 'train',
-              algorithm: 'content',
-              params: ''
-            })),
+            listener.emit(
+              'sendMessage',
+              JSON.stringify({
+                user_id: customer._id,
+                command: 'train',
+                algorithm: 'content',
+                params: '',
+              }),
+            ),
           )
-          .catch((err) =>
-            console.log('Error in inserting content data', err.message),
-          );
+          .catch((err) => res.status(400).json({ message: err.message }));
       });
-
-    res.send(file);
+    res.status(200).json({
+      message: 'Upload data success -> Start training process',
+    });
   },
 );
 router.post(
@@ -104,7 +113,7 @@ router.post(
       .pipe(parse({ ignoreEmpty: true }))
       .on('error', (error) => console.error(error))
       .on('data', async (row) => {
-        console.log(row)
+        console.log(row);
         dataFromFile.push({
           userId: row[0],
           itemId: row[1],
@@ -115,46 +124,57 @@ router.post(
       })
       .on('end', async (rowCount) => {
         console.log('Read file complete', rowCount);
-        const insertData = dataFromFile.map(async (row) => {
-          console.log(row)
-          const collaborative = await Collaborative.findOne({
-            userId: row.userId,
-            itemId: row.itemId,
-            feedBack: row.feedBack,
-            explicit: row.explicit,
-            customer: row.customer,
-          });
-          if (collaborative) {
-            console.log('Collaborative already existed. Skip');
-            return;
-          } else {
-            const result = await Collaborative.create({
+        try {
+          const insertData = dataFromFile.map(async (row) => {
+            console.log(row);
+            const collaborative = await Collaborative.findOne({
               userId: row.userId,
               itemId: row.itemId,
               feedBack: row.feedBack,
               explicit: row.explicit,
               customer: row.customer,
             });
-            return result;
-          }
-        });
-        await PromiseBar.all(insertData, { label: 'Minify' })
-          .then(() =>
-            listener.emit(
-              'sendMessage',
-              JSON.stringify({
-                user_id: customer._id,
-                command: 'train',
-                algorithm: 'collaborative',
-                params: isExplicit === 'true' ? 'explicit' : 'implicit'
-              })
-            ),
-          )
-          .catch((err) =>
-            console.log('Error in inserting collaborative data', err.message),
-          );
+            if (collaborative) {
+              console.log('Collaborative already existed. Skip');
+              return;
+            } else {
+              const result = await Collaborative.create({
+                userId: row.userId,
+                itemId: row.itemId,
+                feedBack: row.feedBack,
+                explicit: row.explicit,
+                customer: row.customer,
+              });
+              return result;
+            }
+          });
+          await PromiseBar.all(insertData, { label: 'Minify' })
+            .then(() =>
+              listener.emit(
+                'sendMessage',
+                JSON.stringify({
+                  user_id: customer._id,
+                  command: 'train',
+                  algorithm: 'collaborative',
+                  params: isExplicit === 'true' ? 'explicit' : 'implicit',
+                }),
+              ),
+            )
+            .catch((err) =>
+              res.status(400).json({
+                message: err.message,
+              }),
+            );
+        } catch (error) {
+          res.status(400).json({
+            message:
+              'Invalid upload file format. Please check the instruction again',
+          });
+        }
       });
-    res.send(file);
+    res.status(200).json({
+      message: 'Upload data success -> Start training process',
+    });
   },
 );
 

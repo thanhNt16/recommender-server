@@ -40,6 +40,8 @@ app.use('/contents', routes.content);
 app.use('/collaboratives', routes.collaborative);
 app.use('/auth', routes.auth);
 app.use('/upload', routes.upload);
+app.use('/message', routes.message);
+
 // app.use('/messages', routes.message);
 
 // * Start * //
