@@ -1,0 +1,8 @@
+version: "3.3"
+
+services:
+  server:
+    image: harryng/gr-server
+    restart: on-failure
+    ports: 
+     - "8000:8000"

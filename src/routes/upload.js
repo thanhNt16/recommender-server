@@ -6,6 +6,7 @@ import multer from 'multer';
 import fs from 'fs';
 import PromiseBar from 'promise.bar';
 import { parse } from '@fast-csv/parse';
+import _ from 'lodash';
 import { listener } from '../services/rabbitService';
 PromiseBar.enable();
 
@@ -15,9 +16,13 @@ var storage = multer.diskStorage({
     cb(null, 'uploads');
   },
   filename: function (req, file, cb) {
+    const params = req.url.split('/');
     cb(
       null,
-      req.customer._id + '-content' + '.' + file.originalname.split('.')[1],
+      req.customer._id +
+        `-${params[1]}-${params[2]}` +
+        '.' +
+        file.originalname.split('.')[1],
     );
   },
 });
@@ -49,44 +54,39 @@ router.post(
       })
       .on('end', async (rowCount) => {
         console.log('Read file complete', rowCount);
-        const insertData = dataFromFile.map(async (row) => {
-          try {
-            const content = await Content.findOne({
-              itemId: row.itemId,
-              content: row.content,
-              customer: row.customer,
-            });
-            if (content) {
-              console.log('Content already existed. Skip');
-              return;
-            } else {
-              const result = await Content.create({
-                itemId: row.itemId,
-                content: row.content,
-                customer: row.customer,
-              });
-              return result;
-            }
-          } catch (error) {
-            res.status(400).json({
-              message:
-                'Invalid upload file format. Please check the instruction again',
-            });
-          }
+        const foundRecords = await Content.find({
+          itemId: {
+            $in: [...dataFromFile.map((item) => item.itemId)],
+          },
+          content: {
+            $in: [...dataFromFile.map((item) => item.content)],
+          },
+          customer: {
+            $in: [...dataFromFile.map((item) => item.customer)],
+          },
         });
-        await PromiseBar.all(insertData, { label: 'Minify' })
-          .then(() =>
-            listener.emit(
-              'sendMessage',
-              JSON.stringify({
-                user_id: customer._id,
-                command: 'train',
-                algorithm: 'content',
-                params: '',
-              }),
-            ),
-          )
-          .catch((err) => res.status(400).json({ message: err.message }));
+        const diff = _.differenceWith(
+          dataFromFile,
+          foundRecords.map((item) => {
+            return {
+              itemId: item.itemId,
+              content: item.content,
+              customer: item.customer,
+            };
+          }),
+          _.isEqual,
+        );
+        const contents = await Content.insertMany(diff);
+        if (contents)
+          listener.emit(
+            'sendMessage',
+            JSON.stringify({
+              user_id: customer._id,
+              command: 'train',
+              algorithm: 'content',
+              params: '',
+            }),
+          );
       });
     res.status(200).json({
       message: 'Upload data success -> Start training process',
@@ -113,7 +113,6 @@ router.post(
       .pipe(parse({ ignoreEmpty: true }))
       .on('error', (error) => console.error(error))
       .on('data', async (row) => {
-        console.log(row);
         dataFromFile.push({
           userId: row[0],
           itemId: row[1],
@@ -123,53 +122,94 @@ router.post(
         });
       })
       .on('end', async (rowCount) => {
-        console.log('Read file complete', rowCount);
+        // console.log('Read file complete', rowCount);
         try {
-          const insertData = dataFromFile.map(async (row) => {
-            console.log(row);
-            const collaborative = await Collaborative.findOne({
-              userId: row.userId,
-              itemId: row.itemId,
-              feedBack: row.feedBack,
-              explicit: row.explicit,
-              customer: row.customer,
-            });
-            if (collaborative) {
-              console.log('Collaborative already existed. Skip');
-              return;
-            } else {
-              const result = await Collaborative.create({
-                userId: row.userId,
-                itemId: row.itemId,
-                feedBack: row.feedBack,
-                explicit: row.explicit,
-                customer: row.customer,
-              });
-              return result;
-            }
+          const foundRecords = await Collaborative.find({
+            userId: {
+              $in: [...dataFromFile.map((item) => item.userId)],
+            },
+            itemId: {
+              $in: [...dataFromFile.map((item) => item.itemId)],
+            },
+            feedBack: {
+              $in: [...dataFromFile.map((item) => item.feedBack)],
+            },
+            explicit: {
+              $in: [...dataFromFile.map((item) => item.explicit)],
+            },
+            customer: {
+              $in: [...dataFromFile.map((item) => item.customer)],
+            },
           });
-          await PromiseBar.all(insertData, { label: 'Minify' })
-            .then(() =>
-              listener.emit(
-                'sendMessage',
-                JSON.stringify({
-                  user_id: customer._id,
-                  command: 'train',
-                  algorithm: 'collaborative',
-                  params: isExplicit === 'true' ? 'explicit' : 'implicit',
-                }),
-              ),
-            )
-            .catch((err) =>
-              res.status(400).json({
-                message: err.message,
+          // console.log('found', foundRecords)
+          // console.log('data', dataFromFile)
+
+          const diff = _.differenceWith(
+            dataFromFile,
+            foundRecords.map((item) => {
+              return {
+                userId: item.userId,
+                itemId: item.itemId,
+                feedBack: item.feedBack,
+                explicit: item.explicit,
+                customer: item.customer,
+              };
+            }),
+            _.isEqual,
+          );
+          const collaboratives = await Collaborative.insertMany(diff);
+          if (collaboratives)
+            listener.emit(
+              'sendMessage',
+              JSON.stringify({
+                user_id: customer._id,
+                command: 'train',
+                algorithm: 'collaborative',
+                params: isExplicit === 'true' ? 'explicit' : 'implicit',
               }),
             );
+
+          // const insertData = dataFromFile.map(async (row) => {
+          //   const collaborative = await Collaborative.findOne({
+          //     userId: row.userId,
+          //     itemId: row.itemId,
+          //     feedBack: row.feedBack,
+          //     explicit: row.explicit,
+          //     customer: row.customer,
+          //   });
+          //   if (collaborative) {
+          //     console.log('Collaborative already existed. Skip');
+          //     return;
+          //   } else {
+          //     const result = await Collaborative.create({
+          //       userId: row.userId,
+          //       itemId: row.itemId,
+          //       feedBack: row.feedBack,
+          //       explicit: row.explicit,
+          //       customer: row.customer,
+          //     });
+          //     return result;
+          //   }
+
+          // });
+
+          // await PromiseBar.all(insertData, { label: 'Minify' }).then(() => {
+          //   listener.emit(
+          //     'sendMessage',
+          //     JSON.stringify({
+          //       user_id: customer._id,
+          //       command: 'train',
+          //       algorithm: 'collaborative',
+          //       params: isExplicit === 'true' ? 'explicit' : 'implicit',
+          //     }),
+          //   );
+          // });
         } catch (error) {
-          res.status(400).json({
-            message:
-              'Invalid upload file format. Please check the instruction again',
-          });
+          console.log('Error: ', error.message);
+          // res.status(400).json({
+          //   message:
+          //     'Invalid upload file format. Please check the instruction again',
+          // });
         }
       });
     res.status(200).json({

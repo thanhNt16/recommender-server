@@ -19,7 +19,8 @@
   },
   "dependencies": {
     "@fast-csv/parse": "^4.3.6",
-    "amqplib": "^0.7.0",
+    "amqp-connection-manager": "^3.2.2",
+    "amqplib": "^0.7.1",
     "bcrypt": "^5.0.1",
     "body-parser": "^1.19.0",
     "chalk": "^4.1.0",
@@ -27,6 +28,7 @@
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "jsonwebtoken": "^8.5.1",
+    "lodash": "^4.17.21",
     "mongoose": "^5.9.10",
     "morgan": "^1.10.0",
     "multer": "^1.4.2",
