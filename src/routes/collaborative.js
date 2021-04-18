@@ -12,7 +12,6 @@ router.post('/create', auth, async (req, res) => {
     const { userId, feedBack, explicit, itemId, content, customerId } = req.body;
     const collaborativeRecord = await req.context.models.Collaborative.create({
       itemId,
-      content,
       userId,
       feedBack,
       explicit,

@@ -54,30 +54,9 @@ router.post(
       })
       .on('end', async (rowCount) => {
         console.log('Read file complete', rowCount);
-        const foundRecords = await Content.find({
-          itemId: {
-            $in: [...dataFromFile.map((item) => item.itemId)],
-          },
-          content: {
-            $in: [...dataFromFile.map((item) => item.content)],
-          },
-          customer: {
-            $in: [...dataFromFile.map((item) => item.customer)],
-          },
-        });
-        const diff = _.differenceWith(
-          dataFromFile,
-          foundRecords.map((item) => {
-            return {
-              itemId: item.itemId,
-              content: item.content,
-              customer: item.customer,
-            };
-          }),
-          _.isEqual,
-        );
-        const contents = await Content.insertMany(diff);
-        if (contents)
+        
+        await Content.insertMany(dataFromFile);
+        // if (contents)
           listener.emit(
             'sendMessage',
             JSON.stringify({
@@ -122,94 +101,20 @@ router.post(
         });
       })
       .on('end', async (rowCount) => {
-        // console.log('Read file complete', rowCount);
         try {
-          const foundRecords = await Collaborative.find({
-            userId: {
-              $in: [...dataFromFile.map((item) => item.userId)],
-            },
-            itemId: {
-              $in: [...dataFromFile.map((item) => item.itemId)],
-            },
-            feedBack: {
-              $in: [...dataFromFile.map((item) => item.feedBack)],
-            },
-            explicit: {
-              $in: [...dataFromFile.map((item) => item.explicit)],
-            },
-            customer: {
-              $in: [...dataFromFile.map((item) => item.customer)],
-            },
-          });
-          // console.log('found', foundRecords)
-          // console.log('data', dataFromFile)
-
-          const diff = _.differenceWith(
-            dataFromFile,
-            foundRecords.map((item) => {
-              return {
-                userId: item.userId,
-                itemId: item.itemId,
-                feedBack: item.feedBack,
-                explicit: item.explicit,
-                customer: item.customer,
-              };
+          await Collaborative.insertMany(dataFromFile);
+          // if (collaboratives)
+          listener.emit(
+            'sendMessage',
+            JSON.stringify({
+              user_id: customer._id,
+              command: 'train',
+              algorithm: 'collaborative',
+              params: isExplicit === 'true' ? 'explicit' : 'implicit',
             }),
-            _.isEqual,
           );
-          const collaboratives = await Collaborative.insertMany(diff);
-          if (collaboratives)
-            listener.emit(
-              'sendMessage',
-              JSON.stringify({
-                user_id: customer._id,
-                command: 'train',
-                algorithm: 'collaborative',
-                params: isExplicit === 'true' ? 'explicit' : 'implicit',
-              }),
-            );
-
-          // const insertData = dataFromFile.map(async (row) => {
-          //   const collaborative = await Collaborative.findOne({
-          //     userId: row.userId,
-          //     itemId: row.itemId,
-          //     feedBack: row.feedBack,
-          //     explicit: row.explicit,
-          //     customer: row.customer,
-          //   });
-          //   if (collaborative) {
-          //     console.log('Collaborative already existed. Skip');
-          //     return;
-          //   } else {
-          //     const result = await Collaborative.create({
-          //       userId: row.userId,
-          //       itemId: row.itemId,
-          //       feedBack: row.feedBack,
-          //       explicit: row.explicit,
-          //       customer: row.customer,
-          //     });
-          //     return result;
-          //   }
-
-          // });
-
-          // await PromiseBar.all(insertData, { label: 'Minify' }).then(() => {
-          //   listener.emit(
-          //     'sendMessage',
-          //     JSON.stringify({
-          //       user_id: customer._id,
-          //       command: 'train',
-          //       algorithm: 'collaborative',
-          //       params: isExplicit === 'true' ? 'explicit' : 'implicit',
-          //     }),
-          //   );
-          // });
         } catch (error) {
           console.log('Error: ', error.message);
-          // res.status(400).json({
-          //   message:
-          //     'Invalid upload file format. Please check the instruction again',
-          // });
         }
       });
     res.status(200).json({
@@ -217,5 +122,92 @@ router.post(
     });
   },
 );
+router.post('/sequence', auth, upload.single('sequence'), (req, res, next) => {
+  const file = req.file;
+  const customer = req.customer;
+  const Sequence = req.context.models.Sequence;
+  const dataFromFile = [];
+
+  if (!file) {
+    const error = new Error('Please upload a file');
+    error.httpStatusCode = 400;
+    return next(error);
+  }
+  fs.createReadStream(file.path)
+    .pipe(parse({ ignoreEmpty: true }))
+    .on('error', (error) => console.error(error))
+    .on('data', async (row) => {
+      console.log(row);
+      dataFromFile.push({
+        userId: row[0],
+        itemId: row[1],
+        feedBack: parseFloat(row[2]),
+        date: row[3],
+        customer: customer._id,
+      });
+    })
+    .on('end', async (rowCount) => {
+      try {
+        // const foundRecords = await Sequence.find({
+        //   userId: {
+        //     $in: [...dataFromFile.map((item) => item.userId)],
+        //   },
+        //   itemId: {
+        //     $in: [...dataFromFile.map((item) => item.itemId)],
+        //   },
+        //   feedBack: {
+        //     $in: [...dataFromFile.map((item) => item.feedBack)],
+        //   },
+        //   date: {
+        //     $in: [...dataFromFile.map((item) => item.date)],
+        //   },
+        //   customer: {
+        //     $in: [...dataFromFile.map((item) => item.customer)],
+        //   },
+        // });
+
+        // const diff = _.differenceWith(
+        //   dataFromFile,
+        //   foundRecords.map((item) => {
+        //     return {
+        //       userId: item.userId,
+        //       itemId: item.itemId,
+        //       feedBack: item.feedBack,
+        //       date: item.date,
+        //       customer: item.customer,
+        //     };
+        //   }),
+        //   _.isEqual,
+        // );
+        // console.log("diff", diff)
+        // if (diff.length !== 0) {
+        await Sequence.insertMany(dataFromFile);
+        // }
+        listener.emit(
+          'sendMessage',
+          JSON.stringify({
+            user_id: customer._id,
+            command: 'train',
+            algorithm: 'sequence',
+            params: '',
+          }),
+        );
+      } catch (error) {
+        console.log('Error: ', error.message);
+      }
+    });
+  // listener.emit(
+  //   'sendMessage',
+  //   JSON.stringify({
+  //     user_id: customer._id,
+  //     command: 'train',
+  //     algorithm: 'sequence',
+  //     params: '',
+  //   }),
+  // );
+  res.status(200).json({
+    message: 'Upload data success -> Start training process',
+  });
+});
 
 export default router;
