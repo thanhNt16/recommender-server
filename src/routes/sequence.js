@@ -1,10 +1,36 @@
 import { Router } from 'express';
+import _ from 'lodash'
+import moment from 'moment'
 import auth from '../middleware';
 const router = Router();
 
+
+function generateDataset(sequence) {
+  const grouped = _.groupBy(sequence, 'itemId')
+  const categories = _.uniq(Object.keys(grouped))
+  const dataset = []
+  
+  for (let index = 0; index < categories.length; index++) {
+    let count = 0;
+    for (let j = 0; j < grouped[categories[index]].length; j++) {
+      count += 1;
+    }
+    dataset.push({ category: categories[index], value: count })
+  }
+  console.log("gr", _.orderBy(dataset, [function(o) { return o.value }]), Object.keys(dataset).length)
+  return _.orderBy(dataset, [function(o) { return o.value }], ['desc'])
+
+}
+
 router.get('/', auth, async (req, res) => {
-  const sequence = await req.context.models.Sequence.find();
-  return res.send(sequence);
+  const sequence = await req.context.models.Sequence.find({ customer: req.customer._id, date: {
+    $gte: moment().subtract(1, 'months').format(), 
+    $lt: moment().format()
+  }}).lean()
+  console.log('seq', sequence)
+
+  const dataset =  generateDataset(sequence).slice(0, 20)
+  return res.send(dataset);
 });
 
 router.post('/create', auth, async (req, res) => {

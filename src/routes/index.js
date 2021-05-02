@@ -6,6 +6,9 @@ import sequence from './sequence';
 import auth from './auth';
 import upload from './upload';
 import message from './message';
+import page from './page';
+import scenario from './scenario';
+
 // import message from './message';
 
 export default {
@@ -15,5 +18,7 @@ export default {
   sequence,
   auth,
   upload,
-  message
+  message,
+  page,
+  scenario
 };

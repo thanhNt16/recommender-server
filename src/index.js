@@ -41,6 +41,12 @@ app.use('/collaboratives', routes.collaborative);
 app.use('/auth', routes.auth);
 app.use('/upload', routes.upload);
 app.use('/message', routes.message);
+app.use('/page', routes.page);
+app.use('/scenario', routes.scenario);
+app.use('/sequences', routes.sequence);
+
+
+
 
 // app.use('/messages', routes.message);
 

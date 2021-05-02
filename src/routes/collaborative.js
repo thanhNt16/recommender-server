@@ -3,7 +3,7 @@ import auth from '../middleware';
 const router = Router();
 
 router.get('/', auth, async (req, res) => {
-  const collaborative = await req.context.models.Collaborative.find();
+  const collaborative = await req.context.models.Collaborative.find({ customer: req.customer._id});
   return res.send(collaborative);
 });
 

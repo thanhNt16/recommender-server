@@ -5,7 +5,7 @@ import event from 'events';
 const listener = new event.EventEmitter();
 
 function connectRabbit() {
-  const connection = amqp.connect(['amqp://rabbitmq:rabbitmq@13.67.37.61:5672'], {
+  const connection = amqp.connect(['amqp://rabbitmq:rabbitmq@139.59.107.94:5672'], {
     heartbeatIntervalInSeconds: 10,
     
   });
