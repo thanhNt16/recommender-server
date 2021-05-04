@@ -30,7 +30,7 @@ router.post('/create', auth, async (req, res) => {
 router.get('/:pageId', auth, async (req, res) => {
   try {
     const page = await req.context.models.Page.findById(req.params.pageId);
-    if (!content)
+    if (!page)
       return res
         .status(400)
         .send(`Page with this id ${req.params.pageId} does not exist`);
