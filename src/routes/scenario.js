@@ -4,7 +4,12 @@ import Scenario from '../models/scenario'
 const router = Router();
 
 router.get('/', auth, async (req, res) => {
-  const scenarios = await Scenario.find({ customer: req.customer._id }).populate('page').lean();
+  const scenarios = await Scenario.find({ customer: req.customer._id, sample: { "$ne": true } }).populate('page').lean();
+  return res.send(scenarios);
+});
+
+router.get('/sample', auth, async (req, res) => {
+  const scenarios = await Scenario.find({ sample: true }).populate('page').lean();
   return res.send(scenarios);
 });
 
@@ -26,47 +31,47 @@ router.post('/create', auth, async (req, res) => {
   }
 });
 
-router.get('/:pageId', auth, async (req, res) => {
+router.get('/:scenarioId', auth, async (req, res) => {
   try {
-    const page = await req.context.models.Page.findById(req.params.pageId);
-    if (!content)
+    const scenario = await req.context.models.Scenario.findById(req.params.scenarioId);
+    if (!scenario)
       return res
         .status(400)
-        .send(`Page with this id ${req.params.pageId} does not exist`);
-    return res.send(page);
+        .send(`Scenario with this id ${req.params.scenarioId} does not exist`);
+    return res.send(scenario);
   } catch (error) {
     return res.status(400).send(error.message);
   }
 });
-router.put('/:pageId', auth, async (req, res) => {
+router.put('/:scenarioId', auth, async (req, res) => {
   try {
-    const page = await req.context.models.Page.findOneAndUpdate(
-      { _id: req.params.pageId },
+    const scenario = await req.context.models.Scenario.findOneAndUpdate(
+      { _id: req.params.scenarioId },
       { ...req.body },
       { new: true, useFindAndModify: false },
     );
-    return res.status(200).send(page);
+    return res.status(200).send(scenario);
   } catch (error) {
     return res.status(400).send(error.message);
   }
 });
 
-router.delete('/:pageId', auth, async (req, res) => {
+router.delete('/:scenarioId', auth, async (req, res) => {
   try {
-    const page = await req.context.models.Page.findById(req.params.pageId);
-    if (!page) {
+    const scenario = await req.context.models.Scenario.findById(req.params.scenarioId);
+    if (!scenario) {
       return res
         .status(400)
-        .send(`page with id ${req.params.pageId} does not exist`);
+        .send(`scenario with id ${req.params.scenarioId} does not exist`);
     }
-    await page.remove();
+    await scenario.remove();
     return res
       .status(200)
-      .send(`Delete page with id ${req.params.pageId} success`);
+      .send(`Delete scenario with id ${req.params.pageId} success`);
   } catch (error) {
     return res
       .status(400)
-      .send(`Error in deleting page with id ${req.params.pageId}`);
+      .send(`Error in deleting scenario with id ${req.params.pageId}`);
   }
 });
 export default router;

@@ -44,7 +44,9 @@ router.post(
     }
     fs.createReadStream(file.path)
       .pipe(parse())
-      .on('error', (error) => console.error(error))
+      .on('error', (error) => res.status(400).json({
+        message: error.message,
+      }))
       .on('data', async (row) => {
         dataFromFile.push({
           itemId: row[0],
@@ -53,10 +55,10 @@ router.post(
         });
       })
       .on('end', async (rowCount) => {
-        console.log('Read file complete', rowCount);
+        console.log('Read file complete', rowCount, dataFromFile);
         
-        await Content.insertMany(dataFromFile);
-        // if (contents)
+        try {
+          await Content.insertMany(dataFromFile);
           listener.emit(
             'sendMessage',
             JSON.stringify({
@@ -66,10 +68,20 @@ router.post(
               params: '',
             }),
           );
+          res.status(200).json({
+            message: 'Upload data success -> Start training process',
+          });
+        } catch (error) {
+          if (error) {
+            res.status(400).json({
+              message: 'Incorrect format for this algorithm',
+            });
+          }
+        }
+        // if (contents)
+          
       });
-    res.status(200).json({
-      message: 'Upload data success -> Start training process',
-    });
+    
   },
 );
 router.post(
@@ -113,13 +125,18 @@ router.post(
               params: isExplicit === 'true' ? 'explicit' : 'implicit',
             }),
           );
+          res.status(200).json({
+            message: 'Upload data success -> Start training process',
+          });
         } catch (error) {
           console.log('Error: ', error.message);
+          if (error) {
+            res.status(400).json({
+              message: 'Incorrect format for this algorithm',
+            });
+          }
         }
       });
-    res.status(200).json({
-      message: 'Upload data success -> Start training process',
-    });
   },
 );
 router.post('/sequence', auth, upload.single('sequence'), (req, res, next) => {
@@ -192,8 +209,16 @@ router.post('/sequence', auth, upload.single('sequence'), (req, res, next) => {
             params: '',
           }),
         );
+        res.status(200).json({
+          message: 'Upload data success -> Start training process',
+        });
       } catch (error) {
         console.log('Error: ', error.message);
+        if (error) {
+          res.status(400).json({
+            message: 'Incorrect format for this algorithm',
+          });
+        }
       }
     });
   // listener.emit(
@@ -205,9 +230,6 @@ router.post('/sequence', auth, upload.single('sequence'), (req, res, next) => {
   //     params: '',
   //   }),
   // );
-  res.status(200).json({
-    message: 'Upload data success -> Start training process',
-  });
 });
 
 export default router;

@@ -15,9 +15,11 @@ function connectRabbit() {
     setup: function (channel) {
       // `channel` here is a regular amqplib `ConfirmChannel`.
       // Note that `this` here is the channelWrapper instance.
+      
       return channel.assertQueue(queue, { durable: true });
     },
   });
+  
   listener.on('sendMessage', (msg) => {
     console.log('receive');
     channelWrapper
