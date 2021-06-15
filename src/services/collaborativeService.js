@@ -8,6 +8,14 @@ export async function list({ limit, skip, customer }) {
         data
     }
 }
+export async function countByItemId({ customer }) {
+    const aggregatorOpts = [
+        {"$match": { customer }},
+        {"$group" : {_id:"$itemId", totalImpression: { '$sum': "$feedBack" }}},
+    ]
+    const data = await Collaborative.aggregate(aggregatorOpts).exec()
+    return data
+}
 
 export async function create(data) {
     const CollaborativeRecord = await Collaborative.create(data)

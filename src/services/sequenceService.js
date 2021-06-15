@@ -9,6 +9,16 @@ export async function list({ limit, skip, customer }) {
     }
 }
 
+export async function countByItemId({ customer }) {
+    const aggregatorOpts = [
+        {"$match": { customer }},
+        {"$group" : {_id:"$itemId", count:{$sum:1}}},
+        {"$sort": {"count": -1}}
+    ]
+    const data = await Sequence.aggregate(aggregatorOpts).exec()
+    return data
+}
+
 export async function create(data) {
     const SequenceRecord = await Sequence.create({ ...data, customer: data.customerId})
     return await SequenceRecord.save()

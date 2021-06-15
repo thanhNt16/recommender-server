@@ -12,6 +12,18 @@ export async function list(req, res) {
         return res.status(400).send(error.message)
     }
 }
+export async function countByItemId(req, res) {
+    // let { skip, limit } = req.query
+    // skip = skip ? parseInt(skip) : 0
+    // limit = limit ? parseInt(limit) : 0
+    const customer = req.customer._id
+    try {
+        const results = await SequenceService.countByItemId({ customer })
+        return res.status(200).json(results)
+    } catch (error) {
+        return res.status(400).send(error.message)
+    }
+}
 
 export async function create(req, res) {
     try {

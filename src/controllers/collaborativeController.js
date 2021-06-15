@@ -12,6 +12,15 @@ export async function list(req, res) {
         return res.status(400).send(error.message)
     }
 }
+export async function countByItemId(req, res) {
+    const customer = req.customer._id
+    try {
+        const results = await CollaborativeService.countByItemId({ customer })
+        return res.status(200).json(results)
+    } catch (error) {
+        return res.status(400).send(error.message)
+    }
+}
 
 export async function create(req, res) {
     try {
