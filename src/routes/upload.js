@@ -50,7 +50,7 @@ router.post(
       .on('data', async (row) => {
         dataFromFile.push({
           itemId: row[0],
-          content: row[1],
+          content: row[2] ? `${row[1]}${row[2]}`: `${row[1]}}`,
           customer: customer._id,
         });
       })
