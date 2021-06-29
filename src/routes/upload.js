@@ -55,7 +55,7 @@ router.post(
         });
       })
       .on('end', async (rowCount) => {
-        console.log('Read file complete', rowCount, dataFromFile);
+        // console.log('Read file complete', rowCount, dataFromFile);
         
         try {
           await Content.insertMany(dataFromFile);
@@ -154,7 +154,7 @@ router.post('/sequence', auth, upload.single('sequence'), (req, res, next) => {
     .pipe(parse({ ignoreEmpty: true }))
     .on('error', (error) => console.error(error))
     .on('data', async (row) => {
-      console.log(row);
+      // console.log(row);
       dataFromFile.push({
         userId: row[0],
         itemId: row[1],
